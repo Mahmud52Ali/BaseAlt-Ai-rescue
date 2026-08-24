@@ -1,0 +1,172 @@
+#!/bin/sh
+
+set -u
+
+if [ -t 0 ]; then
+    stty sane 2>/dev/null || true
+    stty echo icanon 2>/dev/null || true
+fi
+
+COLLECT_BIN="/usr/lib/alt-ai-rescue/alt-ai-rescue-collect"
+AI_BIN="/usr/lib/alt-ai-rescue/alt-ai-rescue-ai"
+MODEL_DOWNLOAD_BIN="/usr/lib/alt-ai-rescue/alt-ai-rescue-download-model"
+LATEST_FINDINGS="/var/log/alt-ai-rescue/findings-latest.json"
+RUNTIME_FINDINGS="/run/alt-ai-rescue/findings-latest.json"
+MODEL_FILE="/usr/share/alt-ai-rescue/models/Agents-A1-4B-Q4_K_M.gguf"
+
+show_system_info()
+{
+    clear
+
+    echo "========================================"
+    echo "          ALT AI Rescue"
+    echo "========================================"
+    echo
+    echo "Kernel:"
+    uname -r
+    echo
+    echo "Memory:"
+
+    awk '
+        /^MemTotal:/ {
+            printf "%.0f MiB\n", $2 / 1024
+        }
+    ' /proc/meminfo
+
+    echo
+    echo "Kernel command line:"
+    cat /proc/cmdline
+
+    echo
+    echo "Root filesystem:"
+    findmnt -no SOURCE,FSTYPE,OPTIONS /
+
+    echo
+    echo "Block devices:"
+    lsblk -o NAME,PATH,SIZE,TYPE,FSTYPE,MOUNTPOINTS
+
+    echo
+    echo "LLM server:"
+    systemctl is-active alt-ai-rescue-llama.service 2>/dev/null || true
+
+    echo
+}
+
+run_ai_recovery()
+{
+    clear
+
+    echo "Running ALT AI Rescue agent..."
+    echo
+
+    if [ ! -x "$AI_BIN" ]; then
+        echo "AI agent launcher not found:"
+        echo "$AI_BIN"
+    elif [ ! -r "$LATEST_FINDINGS" ] && [ ! -r "$RUNTIME_FINDINGS" ]; then
+        echo "Analysis result not found:"
+        echo "$LATEST_FINDINGS"
+        echo "$RUNTIME_FINDINGS"
+        echo
+        echo "Run menu action 'Scan previous boot journal' first."
+    else
+        if [ ! -r "$MODEL_FILE" ]; then
+            if [ ! -x "$MODEL_DOWNLOAD_BIN" ]; then
+                echo "Model downloader not found:"
+                echo "$MODEL_DOWNLOAD_BIN"
+            elif ! "$MODEL_DOWNLOAD_BIN"; then
+                echo
+                echo "Unable to download the GGUF model."
+            else
+                "$AI_BIN"
+            fi
+        else
+            "$AI_BIN"
+        fi
+    fi
+
+    echo
+    printf "Press Enter to continue..."
+    read -r unused
+}
+
+run_journal_scan()
+{
+    clear
+
+    echo "Scanning previous system boot journal..."
+    echo
+
+    if [ ! -x "$COLLECT_BIN" ]; then
+        echo "Journal scanner not found:"
+        echo "$COLLECT_BIN"
+        echo
+        printf "Press Enter to continue..."
+        read -r unused
+        return 0
+    fi
+
+    if ! "$COLLECT_BIN"; then
+        echo
+        echo "Journal scan failed."
+    fi
+
+    echo
+    printf "Press Enter to continue..."
+    read -r unused
+}
+
+open_shell()
+{
+    echo
+    echo "Opening rescue shell."
+    echo "Run 'exit' to return to ALT AI Rescue."
+    echo
+
+    /bin/bash -l || true
+}
+
+while true; do
+    show_system_info
+
+    echo
+    echo "Available actions:"
+    echo
+    echo "1. Refresh system information"
+    echo "2. Scan previous boot journal"
+    echo "3. Run AI recovery"
+    echo "4. Open rescue shell"
+    echo "5. Reboot"
+    echo "6. Power off"
+    echo
+
+    printf "Select action: "
+    read -r choice
+
+    case "$choice" in
+    1)
+        ;;
+    2)
+        run_journal_scan
+        ;;
+    3)
+        run_ai_recovery
+        ;;
+    4)
+        open_shell
+        ;;
+    5)
+        echo "Rebooting..."
+        systemctl reboot
+        ;;
+    6)
+        echo "Powering off..."
+        systemctl poweroff
+        ;;
+    *)
+        echo
+        echo "Unknown action: $choice"
+        printf "Press Enter to continue..."
+        read -r unused
+        ;;
+esac
+done
