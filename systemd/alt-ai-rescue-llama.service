@@ -1,0 +1,30 @@
+[Unit]
+Description=ALT AI Rescue llama.cpp server
+After=local-fs.target
+PartOf=alt-ai-rescue.target
+ConditionPathExists=/usr/share/alt-ai-rescue/models/Agents-A1-4B-Q4_K_M.gguf
+Conflicts=getty@tty2.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/llama-server \
+    --model /usr/share/alt-ai-rescue/models/Agents-A1-4B-Q4_K_M.gguf \
+    --alias Agents-A1-4B \
+    --host 127.0.0.1 \
+    --port 8080 \
+    --ctx-size 24580 \
+    --parallel 1 \
+    -ctk q8_0 \
+    -ctv q8_0 \
+    --jinja
+Restart=on-failure
+RestartSec=3s
+TimeoutStopSec=15s
+StandardOutput=tty
+StandardError=tty
+TTYPath=/dev/tty2
+StandardInput=null
+
+
+[Install]
+WantedBy=alt-ai-rescue.target

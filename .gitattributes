@@ -1,0 +1,11 @@
+* text=auto
+
+# Linux runtime files must retain LF even when the repository is edited on Windows.
+src/alt-ai-rescue-* text eol=lf
+src/collectors.d/* text eol=lf
+src/analyzer/*.py text eol=lf
+grub/* text eol=lf
+systemd/* text eol=lf
+packaging/*.spec text eol=lf
+rules.d/*.json text eol=lf
+docs/*.md text eol=lf

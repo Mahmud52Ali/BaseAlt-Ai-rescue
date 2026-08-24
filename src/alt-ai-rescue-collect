@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+"""Launch the previous-boot journal collector."""
+
+import os
+import sys
+
+
+COLLECTOR_DIR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "collector",
+)
+sys.path.insert(0, COLLECTOR_DIR)
+
+from collector import main
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,6 @@
+[Unit]
+Description=ALT AI Rescue mode
+Requires=basic.target local-fs.target
+After=basic.target local-fs.target
+Wants=alt-ai-rescue-llama.service alt-ai-rescue.service
+AllowIsolate=yes

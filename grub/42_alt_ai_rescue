@@ -1,0 +1,44 @@
+#!/bin/sh
+
+set -e
+
+pkgdatadir="/usr/share/grub"
+. "$pkgdatadir/grub-mkconfig_lib"
+
+root_device="$(grub-probe --target=device /)"
+boot_device="$(grub-probe --target=device /boot)"
+
+root_uuid="$(
+    grub-probe \
+        --device "$root_device" \
+        --target=fs_uuid
+)"
+
+linux_path="$(
+    make_system_path_relative_to_its_root /boot/vmlinuz
+)"
+
+initrd_path="$(
+    make_system_path_relative_to_its_root /boot/initrd.img
+)"
+
+prepare_boot="$(
+    prepare_grub_to_access_device "$boot_device"
+)"
+
+cat <<MENU_HEADER
+menuentry 'ALT AI Rescue' --class altlinux --class gnu-linux --class gnu --class os {
+	load_video
+	insmod gzio
+MENU_HEADER
+
+printf '%s\n' "$prepare_boot" | sed 's/^/\t/'
+
+cat <<MENU_BODY
+	echo 'Loading ALT Linux kernel for AI Rescue...'
+	linux	${linux_path} root=UUID=${root_uuid} rw fstab=no panic=30 systemd.unit=alt-ai-rescue.target systemd.show_status=yes plymouth.enable=0 alt_ai_rescue=1
+
+	echo 'Loading initial ramdisk...'
+	initrd	${initrd_path}
+}
+MENU_BODY
