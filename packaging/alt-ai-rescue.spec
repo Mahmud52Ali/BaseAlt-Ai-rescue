@@ -1,6 +1,6 @@
 Name: alt-ai-rescue
-Version: 0.4
-Release: alt15
+Version: 1.0
+Release: alt1
 
 Summary: Recovery boot mode for ALT Linux
 License: GPL-3.0-or-later
