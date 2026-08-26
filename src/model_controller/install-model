@@ -1,0 +1,98 @@
+#!/bin/sh
+
+set -eu
+
+MODEL_MANIFEST="/usr/share/alt-ai-rescue/model.conf"
+MODEL_DIR="/var/lib/alt-ai-rescue/models"
+MODEL_FILE="$MODEL_DIR/model.gguf"
+
+fail()
+{
+    echo "alt-ai-rescue: $*" >&2
+    exit 1
+}
+
+file_sha256()
+{
+    checksum=$(sha256sum "$1")
+    printf '%s\n' "${checksum%% *}"
+}
+
+cleanup_parts()
+{
+    for stale_part in "$MODEL_DIR"/*.part; do
+        [ -e "$stale_part" ] || continue
+        rm -f -- "$stale_part"
+    done
+}
+
+[ -r "$MODEL_MANIFEST" ] || fail "model manifest not found: $MODEL_MANIFEST"
+
+MODEL_URL=
+MODEL_SHA256=
+. "$MODEL_MANIFEST"
+
+[ -n "$MODEL_URL" ] || fail "MODEL_URL is empty in $MODEL_MANIFEST"
+[ "${#MODEL_SHA256}" -eq 64 ] || fail "invalid MODEL_SHA256 in $MODEL_MANIFEST"
+case "$MODEL_SHA256" in
+    *[!0-9a-f]*) fail "invalid MODEL_SHA256 in $MODEL_MANIFEST" ;;
+esac
+
+install -d -m 0755 "$MODEL_DIR"
+
+if [ -f "$MODEL_FILE" ] &&
+    [ "$(file_sha256 "$MODEL_FILE")" = "$MODEL_SHA256" ]; then
+    cleanup_parts
+    echo "ALT AI Rescue model is already up to date."
+    exit 0
+fi
+
+PART_FILE="$MODEL_DIR/$MODEL_SHA256.part"
+
+download_model()
+{
+    curl \
+        --fail \
+        --location \
+        --retry 3 \
+        --retry-delay 2 \
+        --connect-timeout 30 \
+        "$@" \
+        --output "$PART_FILE" \
+        "$MODEL_URL"
+}
+
+if [ ! -f "$PART_FILE" ] ||
+    [ "$(file_sha256 "$PART_FILE")" != "$MODEL_SHA256" ]; then
+    echo "Downloading ALT AI Rescue model..."
+    if ! download_model --continue-at -; then
+        echo "Unable to resume the model download; retrying from the beginning..." >&2
+        rm -f -- "$PART_FILE"
+        if ! download_model; then
+            fail "model download failed; the previously installed model was left unchanged"
+        fi
+    fi
+fi
+
+ACTUAL_SHA256=$(file_sha256 "$PART_FILE")
+if [ "$ACTUAL_SHA256" != "$MODEL_SHA256" ]; then
+    echo "Downloaded model checksum mismatch; retrying from the beginning..." >&2
+    rm -f -- "$PART_FILE"
+
+    if ! download_model; then
+        fail "model download failed; the previously installed model was left unchanged"
+    fi
+
+    ACTUAL_SHA256=$(file_sha256 "$PART_FILE")
+fi
+
+if [ "$ACTUAL_SHA256" != "$MODEL_SHA256" ]; then
+    rm -f -- "$PART_FILE"
+    fail "downloaded model checksum does not match $MODEL_SHA256"
+fi
+
+chmod 0644 "$PART_FILE"
+mv -f -- "$PART_FILE" "$MODEL_FILE"
+cleanup_parts
+
+echo "ALT AI Rescue model installed successfully."

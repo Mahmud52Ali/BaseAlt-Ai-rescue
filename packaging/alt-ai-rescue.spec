@@ -1,6 +1,6 @@
 Name: alt-ai-rescue
 Version: 1.0
-Release: alt1
+Release: alt4
 
 Summary: Recovery boot mode for ALT Linux
 License: GPL-3.0-or-later
@@ -66,8 +66,12 @@ install -Dm755 \
     %buildroot%_libexecdir/alt-ai-rescue/alt-ai-rescue-ai
 
 install -Dm755 \
-    src/alt-ai-rescue-download-model \
-    %buildroot%_libexecdir/alt-ai-rescue/alt-ai-rescue-download-model
+    src/model_controller/install-model \
+    %buildroot%_libexecdir/alt-ai-rescue/install-model
+
+install -Dm644 \
+    src/model_controller/model.conf \
+    %buildroot%_datadir/alt-ai-rescue/model.conf
 
 find src/ai_agent -type f -name '*.py' | while IFS= read -r module; do
     relative_path="${module#src/}"
@@ -88,19 +92,23 @@ install -Dm644 \
     systemd/alt-ai-rescue-llama.service \
     %buildroot%_unitdir/alt-ai-rescue-llama.service
 
-install -d \
-    %buildroot%_datadir/alt-ai-rescue/models
-
 install -Dm755 \
     grub/42_alt_ai_rescue \
     %buildroot%_sysconfdir/grub.d/42_alt_ai_rescue
 
 %post
 %systemd_post alt-ai-rescue.service alt-ai-rescue-llama.service alt-ai-rescue.target
-%_libexecdir/alt-ai-rescue/alt-ai-rescue-download-model || :
+if ! %_libexecdir/alt-ai-rescue/install-model; then
+    exit 1
+fi
+%systemd_post_with_restart alt-ai-rescue-llama.service
 
 %preun
 %systemd_preun alt-ai-rescue.service alt-ai-rescue-llama.service alt-ai-rescue.target
+if [ "$1" -eq 0 ]; then
+    echo "Removing ALT AI Rescue model data from %_localstatedir/alt-ai-rescue..."
+    rm -rf -- "%_localstatedir/alt-ai-rescue" || exit 1
+fi
 
 %postun
 %systemd_postun alt-ai-rescue.service alt-ai-rescue-llama.service alt-ai-rescue.target
@@ -110,17 +118,16 @@ install -Dm755 \
 %_libexecdir/alt-ai-rescue/alt-ai-rescue-menu
 %_libexecdir/alt-ai-rescue/alt-ai-rescue-collect
 %_libexecdir/alt-ai-rescue/alt-ai-rescue-ai
-%_libexecdir/alt-ai-rescue/alt-ai-rescue-download-model
+%_libexecdir/alt-ai-rescue/install-model
 %_libexecdir/alt-ai-rescue/collector
 
 %_libexecdir/alt-ai-rescue/ai_agent
 
 %dir %_datadir/alt-ai-rescue
-%dir %_datadir/alt-ai-rescue/models
+%_datadir/alt-ai-rescue/model.conf
 
 %_unitdir/alt-ai-rescue.service
 %_unitdir/alt-ai-rescue-llama.service
 %_unitdir/alt-ai-rescue.target
 
 %_sysconfdir/grub.d/42_alt_ai_rescue
-

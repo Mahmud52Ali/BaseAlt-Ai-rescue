@@ -9,10 +9,8 @@ fi
 
 COLLECT_BIN="/usr/lib/alt-ai-rescue/alt-ai-rescue-collect"
 AI_BIN="/usr/lib/alt-ai-rescue/alt-ai-rescue-ai"
-MODEL_DOWNLOAD_BIN="/usr/lib/alt-ai-rescue/alt-ai-rescue-download-model"
 LATEST_FINDINGS="/var/log/alt-ai-rescue/findings-latest.json"
 RUNTIME_FINDINGS="/run/alt-ai-rescue/findings-latest.json"
-MODEL_FILE="/usr/share/alt-ai-rescue/models/Agents-A1-4B-Q4_K_M.gguf"
 
 show_system_info()
 {
@@ -69,19 +67,7 @@ run_ai_recovery()
         echo
         echo "Run menu action 'Scan previous boot journal' first."
     else
-        if [ ! -r "$MODEL_FILE" ]; then
-            if [ ! -x "$MODEL_DOWNLOAD_BIN" ]; then
-                echo "Model downloader not found:"
-                echo "$MODEL_DOWNLOAD_BIN"
-            elif ! "$MODEL_DOWNLOAD_BIN"; then
-                echo
-                echo "Unable to download the GGUF model."
-            else
-                "$AI_BIN"
-            fi
-        else
-            "$AI_BIN"
-        fi
+        "$AI_BIN"
     fi
 
     echo

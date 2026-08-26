@@ -2,13 +2,13 @@
 Description=ALT AI Rescue llama.cpp server
 After=local-fs.target
 PartOf=alt-ai-rescue.target
-ConditionPathExists=/usr/share/alt-ai-rescue/models/Agents-A1-4B-Q4_K_M.gguf
+ConditionPathExists=/var/lib/alt-ai-rescue/models/model.gguf
 Conflicts=getty@tty2.service
 
 [Service]
 Type=simple
 ExecStart=/usr/bin/llama-server \
-    --model /usr/share/alt-ai-rescue/models/Agents-A1-4B-Q4_K_M.gguf \
+    --model /var/lib/alt-ai-rescue/models/model.gguf \
     --alias Agents-A1-4B \
     --host 127.0.0.1 \
     --port 8080 \
