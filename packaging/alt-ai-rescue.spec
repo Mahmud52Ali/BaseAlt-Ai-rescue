@@ -17,6 +17,9 @@ BuildRequires(pre): rpm-build-python3
 BuildRequires: /usr/bin/python3
 
 %add_python3_req_skip ai_agent.tools.util.validator
+%add_python3_req_skip collector
+%add_python3_req_skip journal_scanner
+%add_python3_req_skip boot_selector
 
 Requires: grub-common
 Requires: /bin/bash
