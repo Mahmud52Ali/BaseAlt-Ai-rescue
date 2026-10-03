@@ -9,7 +9,7 @@ Conflicts=getty@tty2.service
 Type=simple
 ExecStart=/usr/bin/llama-server \
     --model /var/lib/alt-ai-rescue/models/model.gguf \
-    --alias Agents-A1-4B \
+    --alias alt-ai-rescue-local \
     --host 127.0.0.1 \
     --port 8080 \
     --ctx-size 24580 \
@@ -24,7 +24,3 @@ StandardOutput=tty
 StandardError=tty
 TTYPath=/dev/tty2
 StandardInput=null
-
-
-[Install]
-WantedBy=alt-ai-rescue.target

@@ -44,7 +44,11 @@ show_system_info()
     lsblk -o NAME,PATH,SIZE,TYPE,FSTYPE,MOUNTPOINTS
 
     echo
-    echo "LLM server:"
+    PYTHONPATH="/usr/lib/alt-ai-rescue${PYTHONPATH:+:$PYTHONPATH}" \
+        /usr/bin/python3 -m ai_agent.selector_model.config
+    echo "Configuration: /etc/alt-ai-rescue/model.conf"
+    echo
+    echo "Local llama.cpp service:"
     systemctl is-active alt-ai-rescue-llama.service 2>/dev/null || true
 
     echo

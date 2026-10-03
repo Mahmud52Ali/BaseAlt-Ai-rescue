@@ -2,7 +2,7 @@
 
 set -eu
 
-MODEL_MANIFEST="/usr/share/alt-ai-rescue/model.conf"
+MODEL_MANIFEST="/usr/share/alt-ai-rescue/model_install.conf"
 MODEL_DIR="/var/lib/alt-ai-rescue/models"
 MODEL_FILE="$MODEL_DIR/model.gguf"
 

@@ -1,6 +1,16 @@
+import sys
+
 from .diagnosis import run_diagnosis
+from .llm_client import configure_llm
 from .planning import run_planning
 from .repair import run_repair
+from .selector_model.config import ConfigError
+from .selector_model.sync import (
+    ModelSyncError,
+    acquire_model_lock,
+    sync_model,
+    wait_for_local_model,
+)
 
 
 def confirm_partial_planning() -> bool:
@@ -90,4 +100,17 @@ def run_AI(findings_path: str = "findings.json") -> dict | None:
 
 
 if __name__ == "__main__":
-    run_AI("findings-latest.json")
+    try:
+        with acquire_model_lock():
+            settings = configure_llm()
+            sync_model(settings["local"])
+            if settings["local"]:
+                print("Waiting for llama.cpp server...", flush=True)
+                wait_for_local_model()
+            run_AI("findings-latest.json")
+    except KeyboardInterrupt:
+        print("\nAI recovery cancelled.", file=sys.stderr)
+        raise SystemExit(130)
+    except (ConfigError, ModelSyncError, RuntimeError, OSError) as error:
+        print(f"AI recovery failed: {error}", file=sys.stderr)
+        raise SystemExit(1)

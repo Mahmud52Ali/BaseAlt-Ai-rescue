@@ -1,0 +1,9 @@
+[Unit]
+Description=Watch ALT AI Rescue model configuration
+After=local-fs.target
+PartOf=alt-ai-rescue.target
+
+[Path]
+PathChanged=/etc/alt-ai-rescue/model.conf
+PathChanged=/etc/alt-ai-rescue
+Unit=alt-ai-rescue-model-sync.service

@@ -2,5 +2,5 @@
 Description=ALT AI Rescue mode
 Requires=basic.target local-fs.target
 After=basic.target local-fs.target
-Wants=alt-ai-rescue-llama.service alt-ai-rescue.service
+Wants=alt-ai-rescue-model-sync.service alt-ai-rescue-model-sync.path alt-ai-rescue.service
 AllowIsolate=yes
